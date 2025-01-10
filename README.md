@@ -118,7 +118,7 @@ faiss_index = faiss.IndexFlatIP(embedding_dimension)
 
 距離的計算公式為：
 
-![image.png](result\cosine_similarity.png)
+![image.png](result/cosine_similarity.png)
 
 - **距離範圍[-1~1]**
 - **距離越小**：
