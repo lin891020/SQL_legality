@@ -118,7 +118,7 @@ faiss_index = faiss.IndexFlatIP(embedding_dimension)
 
 距離的計算公式為：
 
-![image.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/2594f98e-64b7-4925-8994-22120c4481ba/5d26cb43-8db0-441e-9f26-d9c6538da2b7/image.png)
+![image.png](result\cosine_similarity.png)
 
 - **距離範圍[-1~1]**
 - **距離越小**：
@@ -220,7 +220,7 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**testing_sql_lega
 
 準確率0.87622
 
-![image.png](https://imgur.com/a/5N8YEa4)
+![image.png](result/paraphrase_MiniLM_L6_v2/confusion_matrix_paraphrase_MiniLM_L6_v2.png)
 
 ### 3.4 判斷結果
 
