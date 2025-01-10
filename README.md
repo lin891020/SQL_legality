@@ -1,4 +1,3 @@
-# 工作流
 | 步驟 | 內容 |
 | --- | --- |
 | **1. 資料準備** | 清理數據，提取 SQL 語句與標籤，構造結構化數據集。 |
@@ -109,26 +108,19 @@ D:\RAG\SQL_legality\retrieval_system\2_construct_vector_database\**query_similar
 - 使用與 2.1 相同的嵌入模型，將查詢語句轉換為嵌入向量。
 1. **計算距離**：
 - 將查詢嵌入向量與索引中的所有向量逐一計算距離。
-- 使用 **L2 距離（歐幾里得距離）** 衡量語句之間的相似性。
+- 使用**餘弦相似性 (Cosine similarity)**衡量語句之間的相似性。
 
 ```python
-index = faiss.IndexFlatL2(dimension)
+faiss_index = faiss.IndexFlatIP(embedding_dimension)
 ```
 
-**L2 距離公式**
+**Cosine similarity 距離公式**
 
-L2 距離的計算公式為：
+距離的計算公式為：
 
-$$
-d(x,y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}
-$$
+![image.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/2594f98e-64b7-4925-8994-22120c4481ba/5d26cb43-8db0-441e-9f26-d9c6538da2b7/image.png)
 
-- $x$ 是查詢語句的嵌入向量。
-- $y$ 是索引中某語句的嵌入向量。
-- $n$ 是向量的維度（384 ）。
-
-L2 距離越小，表示兩個向量越相似；反之，距離越大，表示相似度越低。 
-
+- **距離範圍[-1~1]**
 - **距離越小**：
     - 表示查詢語句與索引語句的語義越相似。
 - **距離越大**：
@@ -136,57 +128,99 @@ L2 距離越小，表示兩個向量越相似；反之，距離越大，表示�
 
 ### **2.3 示例計算**
 
-假設查詢向量和索引向量分別為：
-
-$$
-x=[0.1,0.2,0.3],y=[0.4,0.1,0.5]
-$$
-
-L2 距離計算如下：
-
-$$
-\text{距離} = \sqrt{(0.1-0.4)^2 + (0.2-0.1)^2 + (0.3-0.5)^2}
-= \sqrt{(-0.3)^2 + (0.1)^2 + (-0.2)^2}
-= \sqrt{0.09 + 0.01 + 0.04}
-= \sqrt{0.14} \approx 0.374
-$$
-
 ## 3. SQL 合法性檢測
 
 ### 3.1 單筆SQL語句檢索
 
 D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**single_sql_legality_classifier.py**
 
+```python
+user_query = "SELECT * FROM earnings;" # 合法語句
+```
+
+```python
+正在使用 paraphrase-MiniLM-L6-v2 模型進行分類...
+加載模型 paraphrase-MiniLM-L6-v2 的向量資料...
+向量索引中包含 98275 條語句。
+輸入語句: SELECT * FROM earnings;
+C:\Users\lin\anaconda3\envs\Langchain\lib\site-packages\transformers\models\bert\modeling_bert.py:439: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:555.)
+  attn_output = torch.nn.functional.scaled_dot_product_attention(
+尋找符合threshold > 0.80，最近的 5 個語句。
+未找到符合閾值的結果，降低相似度閾值到 0.80 ~ 0.70 ...
+
+判斷結果：
+輸入語句: SELECT * FROM earnings;
+語句合法性：legal合法語句
+原因：基於加權結果，標籤加權分數 {0: 2.7422583039741104, 1: 0}
+
+詳細信息：
+第 1 筆：
+  - 索引: 97839
+  - 標籤: 0
+  - 距離: 0.7527
+  - 原始語句: select * from purchase;
+第 2 筆：
+  - 索引: 97862
+  - 標籤: 0
+  - 距離: 0.7074
+  - 原始語句: select count(*) from purchase;
+3.1 單筆SQL語句檢索完成，使用模型: paraphrase-MiniLM-L6-v2！
+```
+
 ### 3.2 單筆SQL輸入檢索推論
+
+加入time函數及模擬使用者單筆SQL輸入查詢
+
+```python
+user_query = input("請輸入SQL語句 (或輸入 'exit' 結束): ")
+```
 
 D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**inference_sql_legality.py**
 
 ```python
-加載模型 microsoft/codebert-base 的向量資料...
+正在使用 paraphrase-MiniLM-L6-v2 模型進行分類...
+加載模型 paraphrase-MiniLM-L6-v2 的向量資料...
 向量索引中包含 98275 條語句。
-輸入語句: select * from users where id = 1 %!<1 or 1 = 1 -- 1
+請輸入SQL語句 (或輸入 'exit' 結束): SELECT * FROM earnings;
+
+輸入語句: SELECT * FROM earnings;
+
+C:\Users\lin\anaconda3\envs\Langchain\lib\site-packages\transformers\models\bert\modeling_bert.py:439: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:555.)
+  attn_output = torch.nn.functional.scaled_dot_product_attention(
+尋找符合threshold > 0.80，最近的 5 個語句。
+未找到符合threshold>0.80的結果，降低相似度閾值到 0.80 ~ 0.70 ...
+
+檢索詳細信息：
+第 1 筆：
+  - 索引: 97839
+  - 標籤: 0
+  - 距離: 0.753
+  - 原始語句: select * from purchase;
+第 2 筆：
+  - 索引: 97862
+  - 標籤: 0
+  - 距離: 0.707
+  - 原始語句: select count(*) from purchase;
+
+推論時間: 618.7963 ms
 
 判斷結果：
-語句合法性：illegal
-原因：基於檢索結果，標籤 {0: 0, 1: 2}
-
-詳細信息：
-第 1 筆：
-  - 索引: 109
-  - 標籤: 1
-  - 距離: 0.0
-  - 原始語句: select * from users where id = 1 %!<1 or 1 = 1 -- 1
-第 2 筆：
-  - 索引: 123
-  - 標籤: 1
-  - 距離: 1.0744056701660156
-  - 原始語句: select * from users where id = 1 %!<@ or 1 = 1 -- 1
-3. SQL 語句合法性判斷完成，使用模型: {model_name}！
+輸入語句: SELECT * FROM earnings;
+語句合法性：legal合法語句
+原因：基於加權結果，標籤加權分數 {0: 2.7423, 1: 0.0000}
+推論時間: 31.7489 ms
+3.2 SQL 語句合法性判斷完成，使用模型: paraphrase-MiniLM-L6-v2！
 ```
 
 ### 3.3 多筆資料檢索
 
 D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**testing_sql_legality_classifier.py**
+
+可以讀取多筆資料並且查詢，生成混淆矩陣。
+
+準確率0.87622
+
+![image.png](https://imgur.com/a/5N8YEa4)
 
 ### 3.4 判斷結果
 
