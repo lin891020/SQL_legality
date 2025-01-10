@@ -185,10 +185,8 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**inference_sql_le
 
 輸入語句: SELECT * FROM earnings;
 
-C:\Users\lin\anaconda3\envs\Langchain\lib\site-packages\transformers\models\bert\modeling_bert.py:439: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:555.)
-  attn_output = torch.nn.functional.scaled_dot_product_attention(
 尋找符合threshold > 0.80，最近的 5 個語句。
-未找到符合threshold>0.80的結果，降低相似度閾值到 0.80 ~ 0.70 ...
+未找到符合threshold>0.80 的結果，降低相似度閾值到 0.80 ~ 0.70 ...
 
 檢索詳細信息：
 第 1 筆：
@@ -202,7 +200,7 @@ C:\Users\lin\anaconda3\envs\Langchain\lib\site-packages\transformers\models\bert
   - 距離: 0.707
   - 原始語句: select count(*) from purchase;
 
-推論時間: 618.7963 ms
+推論時間: 31.7489 ms
 
 判斷結果：
 輸入語句: SELECT * FROM earnings;
@@ -218,7 +216,9 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**testing_sql_lega
 
 可以讀取多筆資料並且查詢，生成混淆矩陣。
 
-準確率0.87622
+| Accuracy | Precision | Recall |
+| --- | --- | --- |
+| 87.623% | 79.659% | 98.808% |
 
 ![image.png](result/paraphrase_MiniLM_L6_v2/confusion_matrix_paraphrase_MiniLM_L6_v2.png)
 
