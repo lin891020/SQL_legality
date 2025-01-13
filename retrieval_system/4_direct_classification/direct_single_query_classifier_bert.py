@@ -4,7 +4,9 @@ import torch
 import numpy as np
 
 # 配置模型名稱
-model_name = "cssupport/mobilebert-sql-injection-detect"  # 使用 Hugging Face 的 MobileBERT SQL Injection Detection 模型
+model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+# model_name = "cssupport/mobilebert-sql-injection-detect"  # 使用 Hugging Face 的 MobileBERT SQL Injection Detection 模型
+
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 

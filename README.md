@@ -267,6 +267,14 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**testing_sql_lega
 
 ![image.png](result//direct/cssupport_mobilebert_sql_injection_detect/confusion_matrix_cssupport_mobilebert_sql_injection_detect.png)
 
+| Accuracy | Precision | Recall |
+| --- | --- | --- |
+| 29.737%| 34.807% | 57.280%|
+
+運行時間36分45秒
+
+![image.png](result//direct/microsoft_codebert_base/confusion_matrix_microsoft_codebert_base.png)
+
 ### 4.2 可選擴展
 
 ## 5. 測試與優化
