@@ -1,113 +1,46 @@
 import os
 import csv
-import faiss
 import numpy as np
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, precision_score, recall_score
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 # 配置模型名稱
-model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+model_name = "cssupport/mobilebert-sql-injection-detect"  # 使用 Hugging Face 的 MobileBERT SQL Injection Detection 模型
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModel.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name)
 
-print(f"正在使用 {model_name} 模型進行分類...")
+print(f"正在使用 {model_name} 模型進行 SQL Injection 檢測...")
 
-# 文件名轉換（替換 - 為 _）
-model_file_name = model_name.replace('-', '_').replace('/', '_')
-
-# 動態設置主資料夾路徑
-base_output_dir = "D:/RAG/SQL_legality/result"
-model_output_dir = os.path.join(base_output_dir, model_file_name)
-
-# 確保模型對應的輸出資料夾存在
-os.makedirs(model_output_dir, exist_ok=True)
-
-# 動態設置輸出檔案路徑
-output_file = os.path.join(model_output_dir, f"testing_results_{model_file_name}.csv")
-wrong_output_file = os.path.join(model_output_dir, f"testing_results_wrong_{model_file_name}.csv")
-confusion_matrix_file = os.path.join(model_output_dir, f"confusion_matrix_{model_file_name}.png")
-
-# 加載向量索引和標籤
-base_vector_dir = "D:/RAG/SQL_legality/dataset/vector"
-model_vector_dir = os.path.join(base_vector_dir, model_file_name)
-index_file = os.path.join(model_vector_dir, f"vector_index_{model_file_name}.faiss")
-labels_file = os.path.join(model_vector_dir, f"vector_labels_{model_file_name}.npy")
-queries_file = os.path.join(model_vector_dir, f"queries_{model_file_name}.npy")
-
-print(f"加載模型 {model_name} 的向量資料...")
-index = faiss.read_index(index_file)
-labels = np.load(labels_file)
-queries = np.load(queries_file, allow_pickle=True)
-
-print(f"向量索引中包含 {index.ntotal} 條語句。")
-
-# 定義 CodeBERT 嵌入函數
-def get_codebert_embedding(query):
+# 定義 SQL 合法性分類函數
+def classify_sql_legality(user_query):
     """
-    使用 CodeBERT 提取語句的嵌入向量。
+    使用 MobileBERT 模型判斷 SQL 語句合法性。
     Args:
-        query (str): 輸入的 SQL 語句。
+        user_query (str): 輸入的 SQL 語句。
     Returns:
-        np.ndarray: 語句的嵌入向量。
+        dict: 包含判斷結果和詳細信息的字典。
     """
-    inputs = tokenizer(query, return_tensors="pt", padding=True, truncation=True)
+    # 將語句進行編碼，並轉為 PyTorch 張量
+    inputs = tokenizer(user_query, return_tensors="pt", truncation=True, padding=True, max_length=512)
     with torch.no_grad():
         outputs = model(**inputs)
-    # 提取最後一層的隱層輸出，並取平均值
-    hidden_states = outputs.last_hidden_state  # [batch_size, seq_length, hidden_dim]
-    sentence_embedding = hidden_states.mean(dim=1).squeeze().numpy()  # [hidden_dim]
-    return sentence_embedding
-
-def classify_sql_legality(user_query, k=3, distance_threshold=0.8, epsilon=1e-6):
-    query_embedding = get_codebert_embedding(user_query)
     
-    # 查詢向量正規化
-    normalized_query = query_embedding / np.linalg.norm(query_embedding, keepdims=True)
+    # 獲取 logits，計算分類概率
+    logits = outputs.logits
+    probabilities = torch.nn.functional.softmax(logits, dim=-1).squeeze().tolist()
     
-    # 檢索向量索引
-    distances, indices = index.search(np.array([normalized_query], dtype="float32"), k)
-
-    valid_results = [
-        {
-            "index": int(idx), 
-            "label": int(labels[idx]), 
-            "distance": round(float(dist), 4),
-            "weight": round(1 / (float(dist) + epsilon), 4), 
-            "query": queries[idx]
-        }
-        for idx, dist in zip(indices[0], distances[0]) if dist >= distance_threshold
-    ]
-
-    # 如果仍沒有找到符合條件的結果，強制使用最近的 K 個語句
-    if not valid_results:
-        valid_results = [
-            {
-                "index": int(idx),
-                "label": int(labels[idx]),
-                "distance": round(float(dist), 4),  # 將距離限制為4位小數
-                "weight": round(1 / (float(dist) + epsilon), 4),  # 將權重限制為4位小數
-                "query": queries[idx]
-            }
-            for idx, dist in zip(indices[0], distances[0])
-        ]
-
-    # 計算加權分數
-    weighted_scores = {0: 0, 1: 0}
-    for res in valid_results:
-        weighted_scores[res["label"]] += res["weight"]
-
-    legality = "legal合法語句" if weighted_scores[0] > weighted_scores[1] else "illegal非法語句"
-    result = {
+    # 判斷分類結果
+    predicted_label = np.argmax(probabilities)
+    label_map = {0: "legal", 1: "illegal"}  # 0 表示合法，1 表示非法
+    
+    return {
         "input_query": user_query,
-        "legality": legality,
-        "reason": f"Weighted scores: {{0: {weighted_scores[0]:.4f}, 1: {weighted_scores[1]:.4f}}}",
-        "details": valid_results
+        "legality": label_map[predicted_label],
+        "probabilities": {label_map[0]: round(probabilities[0], 4), label_map[1]: round(probabilities[1], 4)}
     }
-
-    return result
 
 # 讀取測試數據
 input_file = "D:/RAG/SQL_legality/dataset/testingdata.csv"
@@ -129,18 +62,16 @@ for row in tqdm(data, desc="處理測試數據進度", unit="筆"):
     true_label = row["Label"]
 
     # 判斷語句合法性
-    result = classify_sql_legality(user_query, k=5, distance_threshold=0.8)
+    result = classify_sql_legality(user_query)
 
     # 定義映射
-    mapped_label = {"legal合法語句": 0, "illegal非法語句": 1}
-
-  
+    mapped_label = {"legal": 0, "illegal": 1}
 
     results.append({
         "query": user_query,
         "true_label": int(true_label),  # 確保 true_label 為數字
         "predicted_label": mapped_label[result["legality"]],  # 轉換 predicted_label
-        "reason": result["reason"]  # 已經處理小數位數
+        "probabilities": result["probabilities"]
     })
     true_labels.append(int(true_label))
     predicted_labels.append(mapped_label[result["legality"]])
@@ -150,10 +81,22 @@ wrong_predictions = [
     result for result in results if result["true_label"] != result["predicted_label"]
 ]
 
+# 動態設置主資料夾路徑
+base_output_dir = "D:/RAG/SQL_legality/result/direct"
+model_output_dir = os.path.join(base_output_dir, model_name.replace('-', '_').replace('/', '_'))
+
+# 確保模型對應的輸出資料夾存在
+os.makedirs(model_output_dir, exist_ok=True)
+
+# 動態設置輸出檔案路徑
+output_file = os.path.join(model_output_dir, f"testing_results_{model_name.replace('-', '_').replace('/', '_')}.csv")
+wrong_output_file = os.path.join(model_output_dir, f"testing_results_wrong_{model_name.replace('-', '_').replace('/', '_')}.csv")
+confusion_matrix_file = os.path.join(model_output_dir, f"confusion_matrix_{model_name.replace('-', '_').replace('/', '_')}.png")
+
 # 寫入結果到 CSV
 print(f"正在將結果寫入到 {output_file}...")
 with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["query", "true_label", "predicted_label", "reason"]
+    fieldnames = ["query", "true_label", "predicted_label", "probabilities"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
     writer.writeheader()
@@ -164,7 +107,7 @@ print(f"結果已保存到 {output_file}！")
 # 寫入錯誤預測結果到 CSV
 print(f"正在將錯誤預測結果寫入到 {wrong_output_file}...")
 with open(wrong_output_file, "w", newline="", encoding="utf-8") as csvfile:
-    fieldnames = ["query", "true_label", "predicted_label", "reason"]
+    fieldnames = ["query", "true_label", "predicted_label", "probabilities"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
     writer.writeheader()
@@ -189,7 +132,7 @@ disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["legal", "ill
 disp.plot(cmap=plt.cm.Blues, colorbar=True, values_format='.0f')
 
 # 設置標題與標籤
-plt.title(f"Confusion Matrix_{model_file_name}")
+plt.title(f"Confusion Matrix_{model_name.replace('-', '_').replace('/', '_')}")
 plt.xlabel("Predicted Label")
 plt.ylabel("True Label")
 

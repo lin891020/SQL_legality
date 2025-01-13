@@ -81,7 +81,7 @@ def classify_sql_legality(user_query, k=3, distance_threshold=0.8, epsilon=1e-6)
     result = {
         "input_query": user_query,
         "legality": legality,
-        "reason": f"基於加權結果，標籤加權分數 {weighted_scores}",
+        "reason": f"{{legal: {weighted_scores[0]:.4f}, illegal: {weighted_scores[1]:.4f}}}",
         "details": valid_results
     }
 
@@ -100,8 +100,8 @@ result = classify_sql_legality(user_query, k=5, distance_threshold=0.8)
 # 輸出結果
 print("\n判斷結果：")
 print(f"輸入語句: {user_query}")
-print(f"語句合法性：{result['legality']}")
-print(f"原因：{result['reason']}")
+print(f"判斷結果：{result['legality']}")
+print(f"加權分數: {result['reason']}")
 print("\n詳細信息：")
 for i, res in enumerate(result['details'], start=1):
     print(f"第 {i} 筆：")

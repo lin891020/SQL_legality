@@ -18,7 +18,7 @@ print(f"正在使用 {model_name} 模型進行分類...")
 model_file_name = model_name.replace('-', '_').replace('/', '_')
 
 # 動態設置主資料夾路徑
-base_output_dir = "D:/RAG/SQL_legality/result"
+base_output_dir = "D:/RAG/SQL_legality/result/retrieval"
 model_output_dir = os.path.join(base_output_dir, model_file_name)
 
 # 確保模型對應的輸出資料夾存在

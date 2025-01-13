@@ -12,7 +12,22 @@
 執行程式
 
 產生的數據及資料
-
+```
+retrieval_system/
+├── 1_preprocess_data/
+│   └── dataset_preprocessor.py
+├── 2_construct_vector_database/
+│   ├── convert_queries_to_vectors.py
+│   └── convert_queries_to_vectors_bert.py
+├── 3_vector_retrieval/
+│   ├── vector_inference_with_timer.py
+│   ├── vector_single_query_classifier.py
+│   └── vector_batch_query_evaluator.py
+└── 4_direct_classification/
+    ├── direct_inference_with_timer.py
+    ├── direct_single_query_classifier.py
+    └── direct_batch_query_evaluator.py
+```
 ## 1. 資料準備
 
 ### 1.1 清洗與格式化數據
@@ -220,7 +235,7 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**testing_sql_lega
 
 運行時間9分14秒
 
-![image.png](result/paraphrase_MiniLM_L6_v2/confusion_matrix_paraphrase_MiniLM_L6_v2.png)
+![image.png](result/retrieval/paraphrase_MiniLM_L6_v2/confusion_matrix_paraphrase_MiniLM_L6_v2.png)
 
 
 | Accuracy | Precision | Recall |
@@ -229,7 +244,7 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**testing_sql_lega
 
 運行時間21分31秒
 
-![image.png](result/paraphrase_mpnet_base_v2/confusion_matrix_paraphrase_mpnet_base_v2.png)
+![image.png](result/retrieval/paraphrase_mpnet_base_v2/confusion_matrix_paraphrase_mpnet_base_v2.png)
 
 
 | Accuracy | Precision | Recall |
@@ -238,12 +253,19 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**testing_sql_lega
 
 運行時間44分20秒
 
-![image.png](result/microsoft_codebert_base/confusion_matrix_microsoft_codebert_base.png)
+![image.png](result/retrieval/microsoft_codebert_base/confusion_matrix_microsoft_codebert_base.png)
 ### 3.4 判斷結果
 
 ## 4. 系統整合
 
-### 4.1 判斷結果輸出
+### 4.1 直接分類結果
+| Accuracy | Precision | Recall |
+| --- | --- | --- |
+| 98.454% | 96.930%| 99.862% |
+
+運行時間24分17秒
+
+![image.png](result//direct/cssupport_mobilebert_sql_injection_detect/confusion_matrix_cssupport_mobilebert_sql_injection_detect.png)
 
 ### 4.2 可選擴展
 
