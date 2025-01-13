@@ -2,15 +2,16 @@ import os
 import csv
 import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer, AutoModel
+import torch
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, precision_score, recall_score
 from tqdm import tqdm
 
 # 配置模型名稱
-# model_name = 'paraphrase-MiniLM-L6-v2'
-model_name = 'paraphrase-mpnet-base-v2'  # 替換為其他嵌入模型名稱進行測試
-model = SentenceTransformer(model_name)
+model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModel.from_pretrained(model_name)
 
 print(f"正在使用 {model_name} 模型進行分類...")
 
@@ -43,29 +44,44 @@ queries = np.load(queries_file, allow_pickle=True)
 
 print(f"向量索引中包含 {index.ntotal} 條語句。")
 
-# 定義 SQL 合法性分類函數
+# 定義 CodeBERT 嵌入函數
+def get_codebert_embedding(query):
+    """
+    使用 CodeBERT 提取語句的嵌入向量。
+    Args:
+        query (str): 輸入的 SQL 語句。
+    Returns:
+        np.ndarray: 語句的嵌入向量。
+    """
+    inputs = tokenizer(query, return_tensors="pt", padding=True, truncation=True)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    # 提取最後一層的隱層輸出，並取平均值
+    hidden_states = outputs.last_hidden_state  # [batch_size, seq_length, hidden_dim]
+    sentence_embedding = hidden_states.mean(dim=1).squeeze().numpy()  # [hidden_dim]
+    return sentence_embedding
+
 def classify_sql_legality(user_query, k=3, distance_threshold=0.8, epsilon=1e-6):
-    query_embedding = model.encode([user_query])
-
+    query_embedding = get_codebert_embedding(user_query)
+    
     # 查詢向量正規化
-    normalized_query = query_embedding / np.linalg.norm(query_embedding, axis=1, keepdims=True)
-
+    normalized_query = query_embedding / np.linalg.norm(query_embedding, keepdims=True)
+    
     # 檢索向量索引
-    distances, indices = index.search(np.array(normalized_query, dtype="float32"), k)
+    distances, indices = index.search(np.array([normalized_query], dtype="float32"), k)
 
-    # 檢測有效的檢索結果
     valid_results = [
         {
-            "index": int(idx),
-            "label": int(labels[idx]),
-            "distance": round(float(dist), 4),  # 將距離限制為4位小數
-            "weight": round(1 / (float(dist) + epsilon), 4),  # 將權重限制為4位小數
+            "index": int(idx), 
+            "label": int(labels[idx]), 
+            "distance": round(float(dist), 4),
+            "weight": round(1 / (float(dist) + epsilon), 4), 
             "query": queries[idx]
         }
         for idx, dist in zip(indices[0], distances[0]) if dist >= distance_threshold
     ]
 
-    # 如果無結果，強制返回最近的 K 個語句
+    # 如果仍沒有找到符合條件的結果，強制使用最近的 K 個語句
     if not valid_results:
         valid_results = [
             {
@@ -83,13 +99,15 @@ def classify_sql_legality(user_query, k=3, distance_threshold=0.8, epsilon=1e-6)
     for res in valid_results:
         weighted_scores[res["label"]] += res["weight"]
 
-    legality = "legal" if weighted_scores[0] > weighted_scores[1] else "illegal"
-    return {
+    legality = "legal合法語句" if weighted_scores[0] > weighted_scores[1] else "illegal非法語句"
+    result = {
         "input_query": user_query,
         "legality": legality,
         "reason": f"Weighted scores: {{0: {weighted_scores[0]:.4f}, 1: {weighted_scores[1]:.4f}}}",
         "details": valid_results
     }
+
+    return result
 
 # 讀取測試數據
 input_file = "D:/RAG/SQL_legality/dataset/testingdata.csv"
@@ -114,7 +132,9 @@ for row in tqdm(data, desc="處理測試數據進度", unit="筆"):
     result = classify_sql_legality(user_query, k=5, distance_threshold=0.8)
 
     # 定義映射
-    mapped_label = {"legal": 0, "illegal": 1}  
+    mapped_label = {"legal合法語句": 0, "illegal非法語句": 1}
+
+  
 
     results.append({
         "query": user_query,

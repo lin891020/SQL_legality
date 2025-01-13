@@ -3,11 +3,13 @@ import faiss
 import numpy as np
 from transformers import AutoTokenizer, AutoModel
 import torch
+import time
 
 # 配置模型名稱
 model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
+print(f"正在使用 {model_name} 模型進行分類...")
 
 # 文件名轉換（替換 - 為 _）
 model_file_name = model_name.replace('-', '_').replace('/', '_')
@@ -28,16 +30,35 @@ queries = np.load(queries_file, allow_pickle=True)
 
 print(f"向量索引中包含 {index.ntotal} 條語句。")
 
+# 定義 CodeBERT 嵌入函數
+def get_codebert_embedding(query):
+    """
+    使用 CodeBERT 提取語句的嵌入向量。
+    Args:
+        query (str): 輸入的 SQL 語句。
+    Returns:
+        np.ndarray: 語句的嵌入向量。
+    """
+    inputs = tokenizer(query, return_tensors="pt", padding=True, truncation=True)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    # 提取最後一層的隱層輸出，並取平均值
+    hidden_states = outputs.last_hidden_state  # [batch_size, seq_length, hidden_dim]
+    sentence_embedding = hidden_states.mean(dim=1).squeeze().numpy()  # [hidden_dim]
+    return sentence_embedding
+
 def classify_sql_legality(user_query, k=3, distance_threshold=0.8, epsilon=1e-6):
     start_time = time.perf_counter()
     print(f"\n輸入語句: {user_query}\n")
-    query_embedding = model.encode([user_query])
-
+    
+    # 嵌入用戶輸入語句
+    query_embedding = get_codebert_embedding(user_query)
+    
     # 查詢向量正規化
-    normalized_query = query_embedding / np.linalg.norm(query_embedding, axis=1, keepdims=True)
-
+    normalized_query = query_embedding / np.linalg.norm(query_embedding, keepdims=True)
+    
     # 檢索向量索引
-    distances, indices = index.search(np.array(normalized_query, dtype="float32"), k)
+    distances, indices = index.search(np.array([normalized_query], dtype="float32"), k)
     print(f"尋找符合threshold > {distance_threshold:.2f}，最近的 {k} 個語句。")
 
     # 確保距離值符合餘弦相似度的範圍 [-1, 1]

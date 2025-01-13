@@ -143,8 +143,6 @@ user_query = "SELECT * FROM earnings;" # 合法語句
 加載模型 paraphrase-MiniLM-L6-v2 的向量資料...
 向量索引中包含 98275 條語句。
 輸入語句: SELECT * FROM earnings;
-C:\Users\lin\anaconda3\envs\Langchain\lib\site-packages\transformers\models\bert\modeling_bert.py:439: UserWarning: 1Torch was not compiled with flash attention. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\builder\windows\pytorch\aten\src\ATen\native\transformers\cuda\sdp_utils.cpp:555.)
-  attn_output = torch.nn.functional.scaled_dot_product_attention(
 尋找符合threshold > 0.80，最近的 5 個語句。
 未找到符合閾值的結果，降低相似度閾值到 0.80 ~ 0.70 ...
 
@@ -220,8 +218,27 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\**testing_sql_lega
 | --- | --- | --- |
 | 87.623% | 79.659% | 98.808% |
 
+運行時間9分14秒
+
 ![image.png](result/paraphrase_MiniLM_L6_v2/confusion_matrix_paraphrase_MiniLM_L6_v2.png)
 
+
+| Accuracy | Precision | Recall |
+| --- | --- | --- |
+| 48.881% | 47.815% | 99.957% |
+
+運行時間21分31秒
+
+![image.png](result/paraphrase_mpnet_base_v2/confusion_matrix_paraphrase_mpnet_base_v2.png)
+
+
+| Accuracy | Precision | Recall |
+| --- | --- | --- |
+| 98.227% | 96.743% | 99.568% |
+
+運行時間44分20秒
+
+![image.png](result/microsoft_codebert_base/confusion_matrix_microsoft_codebert_base.png)
 ### 3.4 判斷結果
 
 ## 4. 系統整合

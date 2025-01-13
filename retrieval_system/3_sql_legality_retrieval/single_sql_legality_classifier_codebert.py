@@ -74,8 +74,13 @@ def classify_sql_legality(user_query, k=3, distance_threshold=0.8, epsilon=1e-6)
         return None
 
     valid_results = [
-        {"index": int(idx), "label": int(labels[idx]), "distance": float(dist),
-         "weight": 1 / (float(dist) + epsilon), "query": queries[idx]}
+        {
+            "index": int(idx), 
+            "label": int(labels[idx]), 
+            "distance": float(dist),
+            "weight": 1 / (float(dist) + epsilon), 
+            "query": queries[idx]
+        }
         for idx, dist in zip(indices[0], distances[0]) if dist >= distance_threshold
     ]
 
