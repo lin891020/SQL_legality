@@ -5,7 +5,8 @@ from transformers import AutoTokenizer, AutoModel
 import torch
 
 # 配置模型名稱
-model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+# model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+model_name = "cssupport/mobilebert-sql-injection-detect"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
 print(f"正在使用 {model_name} 模型進行分類...")
@@ -125,8 +126,8 @@ def classify_sql_legality(user_query, k=3, distance_threshold=0.8, epsilon=1e-6)
 # user_query = "SELECT * FROM users WHERE id = 1;" # 合法語句    
 # user_query = "select * from users where id = 1 %!<1 or 1 = 1 -- 1" # 非法語句
 # user_query = "SELECT AVG ( Price ) FROM sail;" # 合法語句
-user_query = "SELECT hall, origin, becomingFROM wear WHERE hat IS NOT NULL;" # 非法語句
-# user_query = "SELECT * FROM earnings;" # 合法語句
+# user_query = "SELECT hall, origin, becomingFROM wear WHERE hat IS NOT NULL;" # 非法語句
+user_query = "SELECT * FROM earnings;" # 合法語句
 
 result = classify_sql_legality(user_query, k=5, distance_threshold=0.8)
 

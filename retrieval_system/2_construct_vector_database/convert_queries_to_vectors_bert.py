@@ -6,7 +6,8 @@ import faiss
 from tqdm import tqdm
 
 # 嵌入模型名稱
-model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+# model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+model_name = "cssupport/mobilebert-sql-injection-detect"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
 
@@ -37,7 +38,7 @@ def get_codebert_embedding(query):
     Returns:
         np.ndarray: 語句的嵌入向量
     """
-    inputs = tokenizer(query, return_tensors="pt", padding=True, truncation=True)
+    inputs = tokenizer(query, return_tensors="pt", padding=True, max_length = 512, truncation=True)
     with torch.no_grad():  # 禁用梯度計算
         outputs = model(**inputs)
     # 提取最後一層隱層輸出，取平均值作為嵌入

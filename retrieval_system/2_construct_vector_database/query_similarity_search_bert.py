@@ -5,7 +5,8 @@ from transformers import AutoTokenizer, AutoModel
 import torch
 
 # 配置模型名稱
-model_name = 'microsoft/codebert-base'  # 替換為其他模型名稱進行測試
+# model_name = 'microsoft/codebert-base'  # 替換為其他模型名稱進行測試
+model_name = "cssupport/mobilebert-sql-injection-detect"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
 
@@ -94,4 +95,4 @@ for i, res in enumerate(result, start=1):
     print(f"  - 原始語句: {res['query']}")
 
 # 提示檢索完成
-print("2.2 SQL 語句檢索完成，使用模型: {model_name}！")
+print(f"2.2 SQL 語句檢索完成，使用模型: {model_name}！")
