@@ -254,6 +254,14 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\testing_sql_legali
 運行時間44分20秒
 
 ![image.png](result/retrieval/microsoft_codebert_base/confusion_matrix_microsoft_codebert_base.png)
+
+| Accuracy | Precision | Recall |
+| --- | --- | --- |
+| 99.138% | 99.489% | 99.689% |
+
+運行時間27分18秒
+
+![image.png](result/retrieval/cssupport_mobilebert_sql_injection_detect/confusion_matrix_cssupport_mobilebert_sql_injection_detect.png)
 ### 3.4 判斷結果
 
 ## 4. 系統整合
@@ -261,19 +269,21 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\testing_sql_legali
 ### 4.1 直接分類結果
 | Accuracy | Precision | Recall |
 | --- | --- | --- |
-| 98.454% | 96.930%| 99.862% |
-
-運行時間24分17秒
-
-![image.png](result//direct/cssupport_mobilebert_sql_injection_detect/confusion_matrix_cssupport_mobilebert_sql_injection_detect.png)
-
-| Accuracy | Precision | Recall |
-| --- | --- | --- |
 | 29.737%| 34.807% | 57.280%|
 
 運行時間36分45秒
 
 ![image.png](result//direct/microsoft_codebert_base/confusion_matrix_microsoft_codebert_base.png)
+
+| Accuracy | Precision | Recall |
+| --- | --- | --- |
+| 98.454% | 96.930%| 99.862% |
+
+運行時間24分17秒
+
+![image.png](result/retrieval/cssupport_mobilebert_sql_injection_detect/confusion_matrix_cssupport_mobilebert_sql_injection_detect.png)
+
+
 
 ### 4.2 可選擴展
 

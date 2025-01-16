@@ -9,7 +9,8 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_s
 from tqdm import tqdm
 
 # 配置模型名稱
-model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+# model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+model_name = "cssupport/mobilebert-sql-injection-detect"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
 
@@ -53,7 +54,7 @@ def get_codebert_embedding(query):
     Returns:
         np.ndarray: 語句的嵌入向量。
     """
-    inputs = tokenizer(query, return_tensors="pt", padding=True, truncation=True)
+    inputs = tokenizer(query, return_tensors="pt", padding=True, truncation=True, max_length=512)
     with torch.no_grad():
         outputs = model(**inputs)
     # 提取最後一層的隱層輸出，並取平均值

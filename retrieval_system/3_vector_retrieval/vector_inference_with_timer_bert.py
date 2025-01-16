@@ -6,7 +6,8 @@ import torch
 import time
 
 # 配置模型名稱
-model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+# model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+model_name = "cssupport/mobilebert-sql-injection-detect" 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
 print(f"正在使用 {model_name} 模型進行分類...")
