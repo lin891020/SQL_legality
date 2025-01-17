@@ -3,12 +3,13 @@ import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import warnings
+
 warnings.filterwarnings("ignore")
 
 # 配置模型名稱
-
 model_name = 'paraphrase-MiniLM-L6-v2'
 # model_name = 'paraphrase-mpnet-base-v2'  # 替換為其他嵌入模型名稱進行測試
+
 model = SentenceTransformer(model_name)
 print(f"正在使用 {model_name} 模型進行分類...")
 # 文件名轉換（替換 - 為 _）
@@ -30,7 +31,7 @@ queries = np.load(queries_file, allow_pickle=True)
 
 print(f"向量索引中包含 {index.ntotal} 條語句。")
 
-def classify_sql_legality(user_query, k=5, epsilon=1e-6):
+def classify_sql_legality(user_query, k, epsilon=1e-6):
     """
     判斷 SQL 語句的合法性，不受距離閾值限制。
     Args:
@@ -50,31 +51,26 @@ def classify_sql_legality(user_query, k=5, epsilon=1e-6):
     
     # 檢索向量索引
     distances, indices = index.search(np.array(normalized_query, dtype="float32"), k)
-    # print(f"檢索距離最近的 {k} 個語句：")
-    for i, (dist, idx) in enumerate(zip(distances[0], indices[0])):
-        pass
 
-    # 計算加權分數
-    weighted_scores = {0: 0, 1: 0}
+    # 計算分數
+    scores = {0: 0, 1: 0}
     valid_results = []
     for idx, dist in zip(indices[0], distances[0]):
-        weight = round(1 / (float(dist) + epsilon), 4)
-        weighted_scores[labels[idx]] += weight
+        scores[labels[idx]] += dist
         valid_results.append({
             "index": int(idx),
             "label": int(labels[idx]),
             "distance": round(float(dist), 4),
-            "weight": weight,
             "query": queries[idx]
         })
     
     # 判斷語句合法性
-    legality = "legal" if weighted_scores[0] > weighted_scores[1] else "illegal"
+    legality = "legal" if scores[0] < scores[1] else "illegal"
 
     return {
         "input_query": user_query,
         "legality": legality,
-        "reason": f"Weighted scores: {{'legal': {weighted_scores[0]:.4f}, 'illegal': {weighted_scores[1]:.4f}}}",
+        "reason": f"Scores: {{'legal': {scores[0]:.4f}, 'illegal': {scores[1]:.4f}}}",
         "details": valid_results
     }
 
@@ -85,8 +81,9 @@ user_query = "SELECT * FROM users WHERE id = 1;" # 合法語句
 # user_query = "SELECT AVG ( Price ) FROM sail;" # 合法語句
 # user_query = "SELECT hall, origin, becomingFROM wear WHERE hat IS NOT NULL;" # 非法語句
 
+# 設置 k 值
 k_value = 5
-result = classify_sql_legality(user_query, k=k_value)
+result = classify_sql_legality(user_query, k = k_value)
 
 # 輸出結果
 print("\n判斷結果：")
@@ -96,12 +93,11 @@ print(f"判斷結果: {result['legality']}")
 print(f"分類概率: {result['reason']}")
 
 # 詳細匹配資訊
-print("\n詳細匹配資訊：")
+print("\n詳細檢索資訊：")
 for i, detail in enumerate(result["details"], start=1):
     print(f"第 {i} 筆：")
     print(f"  - 索引: {detail['index']}")
     print(f"  - 標籤: {detail['label']}")
     print(f"  - 距離: {detail['distance']:.4f}")
-    print(f"  - 權重: {detail['weight']:.4f}")
     print(f"  - 原始語句: {detail['query']}")
 print(f"3.1 單筆SQL語句檢索完成，使用模型: {model_name}！")

@@ -29,7 +29,7 @@ queries = np.load(queries_file, allow_pickle=True)
 
 print(f"向量索引中包含 {index.ntotal} 條語句。")
 
-def classify_sql_legality(user_query, k=5, epsilon=1e-6):
+def classify_sql_legality(user_query, k, epsilon=1e-6):
     start_time = time.perf_counter()
     print(f"\n輸入語句: {user_query}\n")
     
@@ -41,35 +41,33 @@ def classify_sql_legality(user_query, k=5, epsilon=1e-6):
     
     # 檢索向量索引
     distances, indices = index.search(np.array(normalized_query, dtype="float32"), k)
-    # print(f"檢索距離最近的 {k} 個語句：")
-    for i, (dist, idx) in enumerate(zip(distances[0], indices[0])):
-        pass
 
-    # 計算加權分數
-    weighted_scores = {0: 0, 1: 0}
+    # 計算分數
+    scores = {0: 0, 1: 0}
     valid_results = []
     for idx, dist in zip(indices[0], distances[0]):
-        weight = round(1 / (float(dist) + epsilon), 4)
-        weighted_scores[labels[idx]] += weight
+        scores[labels[idx]] += dist
         valid_results.append({
             "index": int(idx),
             "label": int(labels[idx]),
             "distance": round(float(dist), 4),
-            "weight": weight,
             "query": queries[idx]
         })
     
     # 判斷語句合法性
-    legality = "legal" if weighted_scores[0] > weighted_scores[1] else "illegal"
+    legality = "legal" if scores[0] < scores[1] else "illegal"
     inference_time_ms = (time.perf_counter() - start_time) * 1000
 
     return {
         "input_query": user_query,
         "legality": legality,
-        "reason": f"Weighted scores: {{'legal': {weighted_scores[0]:.4f}, 'illegal': {weighted_scores[1]:.4f}}}",
+        "reason": f"Scores: {{'legal': {scores[0]:.4f}, 'illegal': {scores[1]:.4f}}}",
         "details": valid_results,
         "inference_time_ms": inference_time_ms
     }
+
+# 設置 k 值
+k_value = 1
 
 # 循環輸入查詢語句
 while True:
@@ -78,7 +76,7 @@ while True:
         print("結束程序。")
         break
 
-    result = classify_sql_legality(user_query, k=5)
+    result = classify_sql_legality(user_query, k = k_value)
 
     # 輸出結果
     print("\n判斷結果：")
