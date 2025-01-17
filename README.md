@@ -229,6 +229,8 @@ D:\RAG\SQL_legality\retrieval_system\3_sql_legality_retrieval\testing_sql_legali
 
 可以讀取多筆資料並且查詢，生成混淆矩陣。
 
+paraphrase-MiniLM-L6-v2
+
 | Accuracy | Precision | Recall |
 | --- | --- | --- |
 | 87.623% | 79.659% | 98.808% |

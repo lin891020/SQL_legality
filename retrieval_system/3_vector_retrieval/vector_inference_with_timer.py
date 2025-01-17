@@ -117,9 +117,9 @@ while True:
     result = classify_sql_legality(user_query, k=5, distance_threshold=0.8)
 
     # 輸出結果
-    print("\n判斷結果：")
-    print(f"輸入語句: {user_query}")
-    print(f"語句合法性：{result['legality']}")
-    print(f"原因：{result['reason']}")
+    # print("\n判斷結果：")
+    # print(f"輸入語句: {user_query}")
+    # print(f"語句合法性：{result['legality']}")
+    # print(f"原因：{result['reason']}")
     print(f"推論時間: {result['inference_time_ms']:.4f} ms")
-    print(f"3.2 SQL 語句合法性判斷完成，使用模型: {model_name}！")
+    # print(f"3.2 SQL 語句合法性判斷完成，使用模型: {model_name}！")
