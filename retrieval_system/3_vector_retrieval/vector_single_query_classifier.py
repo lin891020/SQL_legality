@@ -85,7 +85,7 @@ user_query = "SELECT * FROM users WHERE id = 1;" # 合法語句
 # user_query = "SELECT AVG ( Price ) FROM sail;" # 合法語句
 # user_query = "SELECT hall, origin, becomingFROM wear WHERE hat IS NOT NULL;" # 非法語句
 
-k_value = 1
+k_value = 5
 result = classify_sql_legality(user_query, k=k_value)
 
 # 輸出結果

@@ -5,6 +5,7 @@ from transformers import AutoTokenizer, AutoModel
 import torch
 
 # 配置模型名稱
+# model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
 model_name = "cssupport/mobilebert-sql-injection-detect"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
@@ -105,7 +106,7 @@ print(f"分類概率: {result['reason']}")
 # 詳細匹配資訊
 print("\n詳細匹配資訊：")
 for i, detail in enumerate(result["details"], start=1):
-    print(f"第 {i} 筆：")
+    print(f"第 {i} 筋：")
     print(f"  - 索引: {detail['index']}")
     print(f"  - 標籤: {detail['label']}")
     print(f"  - 距離: {detail['distance']:.4f}")

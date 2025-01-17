@@ -47,22 +47,26 @@ print(f"向量索引中包含 {index.ntotal} 條語句。")
 
 # 定義 CodeBERT 嵌入函數
 def get_codebert_embedding(query):
-    """
-    使用 CodeBERT 提取語句的嵌入向量。
-    Args:
-        query (str): 輸入的 SQL 語句。
-    Returns:
-        np.ndarray: 語句的嵌入向量。
-    """
-    inputs = tokenizer(query, return_tensors="pt", padding=True, truncation=True, max_length=512)
+    inputs = tokenizer(query, return_tensors="pt", padding=True, truncation=True)
     with torch.no_grad():
         outputs = model(**inputs)
-    # 提取最後一層的隱層輸出，並取平均值
-    hidden_states = outputs.last_hidden_state  # [batch_size, seq_length, hidden_dim]
-    sentence_embedding = hidden_states.mean(dim=1).squeeze().numpy()  # [hidden_dim]
+    hidden_states = outputs.last_hidden_state
+    sentence_embedding = hidden_states.mean(dim=1).squeeze().numpy()
     return sentence_embedding
 
-def classify_sql_legality(user_query, k=3, distance_threshold=0.8, epsilon=1e-6):
+def classify_sql_legality(user_query, k=5, epsilon=1e-6):
+    """
+    判斷 SQL 語句的合法性，不受距離閾值限制。
+    Args:
+        user_query (str): 輸入的 SQL 語句。
+        k (int): 返回的最相似語句數量。
+        epsilon (float): 防止分母為 0 的小常數。
+    Returns:
+        dict: 包含判斷結果和詳細信息的字典。
+    """
+    print(f"輸入語句: {user_query}")
+    
+    # 嵌入用戶輸入語句
     query_embedding = get_codebert_embedding(user_query)
     
     # 查詢向量正規化
@@ -70,45 +74,33 @@ def classify_sql_legality(user_query, k=3, distance_threshold=0.8, epsilon=1e-6)
     
     # 檢索向量索引
     distances, indices = index.search(np.array([normalized_query], dtype="float32"), k)
-
-    valid_results = [
-        {
-            "index": int(idx), 
-            "label": int(labels[idx]), 
-            "distance": round(float(dist), 4),
-            "weight": round(1 / (float(dist) + epsilon), 4), 
-            "query": queries[idx]
-        }
-        for idx, dist in zip(indices[0], distances[0]) if dist >= distance_threshold
-    ]
-
-    # 如果仍沒有找到符合條件的結果，強制使用最近的 K 個語句
-    if not valid_results:
-        valid_results = [
-            {
-                "index": int(idx),
-                "label": int(labels[idx]),
-                "distance": round(float(dist), 4),  # 將距離限制為4位小數
-                "weight": round(1 / (float(dist) + epsilon), 4),  # 將權重限制為4位小數
-                "query": queries[idx]
-            }
-            for idx, dist in zip(indices[0], distances[0])
-        ]
+    # print(f"檢索距離最近的 {k} 個語句：")
+    for i, (dist, idx) in enumerate(zip(distances[0], indices[0])):
+        pass
 
     # 計算加權分數
     weighted_scores = {0: 0, 1: 0}
-    for res in valid_results:
-        weighted_scores[res["label"]] += res["weight"]
+    valid_results = []
+    for idx, dist in zip(indices[0], distances[0]):
+        weight = round(1 / (float(dist) + epsilon), 4)
+        weighted_scores[labels[idx]] += weight
+        valid_results.append({
+            "index": int(idx),
+            "label": int(labels[idx]),
+            "distance": round(float(dist), 4),
+            "weight": weight,
+            "query": queries[idx]
+        })
+    
+    # 判斷語句合法性
+    legality = "legal" if weighted_scores[0] > weighted_scores[1] else "illegal"
 
-    legality = "legal合法語句" if weighted_scores[0] > weighted_scores[1] else "illegal非法語句"
-    result = {
+    return {
         "input_query": user_query,
         "legality": legality,
-        "reason": f"Weighted scores: {{0: {weighted_scores[0]:.4f}, 1: {weighted_scores[1]:.4f}}}",
+        "reason": f"Weighted scores: {{'legal': {weighted_scores[0]:.4f}, 'illegal': {weighted_scores[1]:.4f}}}",
         "details": valid_results
     }
-
-    return result
 
 # 讀取測試數據
 input_file = "D:/RAG/SQL_legality/dataset/testingdata.csv"
@@ -130,12 +122,10 @@ for row in tqdm(data, desc="處理測試數據進度", unit="筆"):
     true_label = row["Label"]
 
     # 判斷語句合法性
-    result = classify_sql_legality(user_query, k=5, distance_threshold=0.8)
+    result = classify_sql_legality(user_query, k=5)
 
     # 定義映射
-    mapped_label = {"legal合法語句": 0, "illegal非法語句": 1}
-
-  
+    mapped_label = {"legal": 0, "illegal": 1}
 
     results.append({
         "query": user_query,

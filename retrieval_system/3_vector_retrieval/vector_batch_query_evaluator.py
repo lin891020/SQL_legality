@@ -43,51 +43,51 @@ queries = np.load(queries_file, allow_pickle=True)
 
 print(f"向量索引中包含 {index.ntotal} 條語句。")
 
-# 定義 SQL 合法性分類函數
-def classify_sql_legality(user_query, k=3, distance_threshold=0.8, epsilon=1e-6):
+def classify_sql_legality(user_query, k=5, epsilon=1e-6):
+    """
+    判斷 SQL 語句的合法性，不受距離閾值限制。
+    Args:
+        user_query (str): 輸入的 SQL 語句。
+        k (int): 返回的最相似語句數量。
+        epsilon (float): 防止分母為 0 的小常數。
+    Returns:
+        dict: 包含判斷結果和詳細信息的字典。
+    """
+    print(f"輸入語句: {user_query}")
+    
+    # 嵌入用戶輸入語句
     query_embedding = model.encode([user_query])
-
+    
     # 查詢向量正規化
     normalized_query = query_embedding / np.linalg.norm(query_embedding, axis=1, keepdims=True)
-
+    
     # 檢索向量索引
     distances, indices = index.search(np.array(normalized_query, dtype="float32"), k)
-
-    # 檢測有效的檢索結果
-    valid_results = [
-        {
-            "index": int(idx),
-            "label": int(labels[idx]),
-            "distance": round(float(dist), 4),  # 將距離限制為4位小數
-            "weight": round(1 / (float(dist) + epsilon), 4),  # 將權重限制為4位小數
-            "query": queries[idx]
-        }
-        for idx, dist in zip(indices[0], distances[0]) if dist >= distance_threshold
-    ]
-
-    # 如果無結果，強制返回最近的 K 個語句
-    if not valid_results:
-        valid_results = [
-            {
-                "index": int(idx),
-                "label": int(labels[idx]),
-                "distance": round(float(dist), 4),  # 將距離限制為4位小數
-                "weight": round(1 / (float(dist) + epsilon), 4),  # 將權重限制為4位小數
-                "query": queries[idx]
-            }
-            for idx, dist in zip(indices[0], distances[0])
-        ]
+    # print(f"檢索距離最近的 {k} 個語句：")
+    for i, (dist, idx) in enumerate(zip(distances[0], indices[0])):
+        pass
 
     # 計算加權分數
     weighted_scores = {0: 0, 1: 0}
-    for res in valid_results:
-        weighted_scores[res["label"]] += res["weight"]
-
+    valid_results = []
+    for idx, dist in zip(indices[0], distances[0]):
+        weight = round(1 / (float(dist) + epsilon), 4)
+        weighted_scores[labels[idx]] += weight
+        valid_results.append({
+            "index": int(idx),
+            "label": int(labels[idx]),
+            "distance": round(float(dist), 4),
+            "weight": weight,
+            "query": queries[idx]
+        })
+    
+    # 判斷語句合法性
     legality = "legal" if weighted_scores[0] > weighted_scores[1] else "illegal"
+
     return {
         "input_query": user_query,
         "legality": legality,
-        "reason": f"Weighted scores: {{0: {weighted_scores[0]:.4f}, 1: {weighted_scores[1]:.4f}}}",
+        "reason": f"Weighted scores: {{'legal': {weighted_scores[0]:.4f}, 'illegal': {weighted_scores[1]:.4f}}}",
         "details": valid_results
     }
 
@@ -111,7 +111,7 @@ for row in tqdm(data, desc="處理測試數據進度", unit="筆"):
     true_label = row["Label"]
 
     # 判斷語句合法性
-    result = classify_sql_legality(user_query, k=5, distance_threshold=0.8)
+    result = classify_sql_legality(user_query, k=5)
 
     # 定義映射
     mapped_label = {"legal": 0, "illegal": 1}  
