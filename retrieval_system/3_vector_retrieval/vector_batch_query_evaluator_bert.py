@@ -14,8 +14,9 @@ warnings.filterwarnings("ignore")
 
 
 # 配置模型名稱
-model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
-# model_name = "cssupport/mobilebert-sql-injection-detect"
+# model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
+model_name = "cssupport/mobilebert-sql-injection-detect"
+
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
 
@@ -46,7 +47,7 @@ print(f"向量索引中包含 {index.ntotal} 條語句。")
 
 # 定義 CodeBERT 嵌入函數
 def get_codebert_embedding(query):
-    inputs = tokenizer(query, return_tensors="pt", padding=True, truncation=True)
+    inputs = tokenizer(query, return_tensors="pt", padding=True, max_length=512, truncation=True)
     with torch.no_grad():
         outputs = model(**inputs)
     hidden_states = outputs.last_hidden_state
@@ -99,7 +100,7 @@ def classify_sql_legality(user_query, k=5, epsilon=1e-6):
 all_results = []
 
 # 讀取測試數據
-input_file = "D:/RAG/SQL_legality/dataset/testingdata10.csv"
+input_file = "D:/RAG/SQL_legality/dataset/testingdata.csv"
 print(f"正在從 {input_file} 讀取測試數據...")
 with open(input_file, "r", encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)

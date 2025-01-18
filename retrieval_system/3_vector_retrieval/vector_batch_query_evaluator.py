@@ -12,8 +12,8 @@ import time
 warnings.filterwarnings("ignore")
 
 # 配置模型名稱
-model_name = 'paraphrase-MiniLM-L6-v2'
-# model_name = 'paraphrase-mpnet-base-v2'  # 替換為其他嵌入模型名稱進行測試
+# model_name = 'paraphrase-MiniLM-L6-v2'
+model_name = 'paraphrase-mpnet-base-v2'  # 替換為其他嵌入模型名稱進行測試
 model = SentenceTransformer(model_name)
 
 print(f"正在使用 {model_name} 模型進行分類...")
