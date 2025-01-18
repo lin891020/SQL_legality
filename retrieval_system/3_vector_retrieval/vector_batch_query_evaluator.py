@@ -74,7 +74,7 @@ def classify_sql_legality(user_query, k, epsilon=1e-6):
         })
     
     # 判斷語句合法性
-    legality = "legal" if scores[0] < scores[1] else "illegal"
+    legality = "legal" if scores[0] > scores[1] else "illegal"
 
     return {
         "input_query": user_query,

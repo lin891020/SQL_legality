@@ -66,7 +66,7 @@ def classify_sql_legality(user_query, k=5, epsilon=1e-6):
         })
     
     # 判斷語句合法性
-    legality = "legal" if scores[0] < scores[1] else "illegal"
+    legality = "legal" if scores[0] > scores[1] else "illegal"
     inference_time_ms = (time.perf_counter() - start_time) * 1000
 
     return {

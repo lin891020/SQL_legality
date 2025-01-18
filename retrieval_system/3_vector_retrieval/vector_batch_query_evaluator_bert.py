@@ -26,15 +26,9 @@ model_file_name = model_name.replace('-', '_').replace('/', '_')
 
 # 動態設置主資料夾路徑
 base_output_dir = "D:/RAG/SQL_legality/result/retrieval"
-model_output_dir = os.path.join(base_output_dir, model_file_name)
 
 # 確保模型對應的輸出資料夾存在
-os.makedirs(model_output_dir, exist_ok=True)
-
-# 動態設置輸出檔案路徑
-output_file = os.path.join(model_output_dir, f"testing_results_{model_file_name}.csv")
-wrong_output_file = os.path.join(model_output_dir, f"testing_results_wrong_{model_file_name}.csv")
-confusion_matrix_file = os.path.join(model_output_dir, f"confusion_matrix_{model_file_name}.png")
+os.makedirs(base_output_dir, exist_ok=True)
 
 # 加載向量索引和標籤
 base_vector_dir = "D:/RAG/SQL_legality/dataset/vector"
@@ -69,7 +63,6 @@ def classify_sql_legality(user_query, k=5, epsilon=1e-6):
     Returns:
         dict: 包含判斷結果和詳細信息的字典。
     """
-    print(f"輸入語句: {user_query}")
     
     # 嵌入用戶輸入語句
     query_embedding = get_codebert_embedding(user_query)
@@ -93,7 +86,7 @@ def classify_sql_legality(user_query, k=5, epsilon=1e-6):
         })
     
     # 判斷語句合法性
-    legality = "legal" if scores[0] < scores[1] else "illegal"
+    legality = "legal" if scores[0] > scores[1] else "illegal"
 
     return {
         "input_query": user_query,
@@ -102,30 +95,38 @@ def classify_sql_legality(user_query, k=5, epsilon=1e-6):
         "details": valid_results
     }
 
+# Initialize a list to store all results
+all_results = []
+
 # 讀取測試數據
 input_file = "D:/RAG/SQL_legality/dataset/testingdata10.csv"
 print(f"正在從 {input_file} 讀取測試數據...")
-results = []
-true_labels = []
-predicted_labels = []
-
-data_count = 0
 with open(input_file, "r", encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
     data = list(reader)
     data_count = len(data)
     print(f"共讀取到 {data_count} 筆測試數據。")
 
-
-
-# Initialize a list to store all results
-all_results = []
-
 for k_value in range(1, 6):
     print(f"正在處理 k = {k_value} 的結果...")
 
+    # 動態設置主資料夾路徑
+    model_output_dir = os.path.join(base_output_dir, model_file_name, "k = " + str(k_value))
+
+    # 確保模型對應的輸出資料夾存在
+    os.makedirs(model_output_dir, exist_ok=True)
+
+    # 動態設置輸出檔案路徑
+    output_file = os.path.join(model_output_dir, f"testing_results_{model_file_name} - k = {k_value}.csv")
+    wrong_output_file = os.path.join(model_output_dir, f"testing_results_wrong_{model_file_name} - k = {k_value}.csv")
+    confusion_matrix_file = os.path.join(model_output_dir, f"confusion_matrix_{model_file_name} - k = {k_value}.png")
+
+    results = []
+    true_labels = []
+    predicted_labels = []
+
     start_time = time.time()
-    
+
     # 處理每筆數據
     for row in tqdm(data, desc="處理測試數據進度", unit="筆"):
         user_query = row["Query"]
@@ -183,28 +184,6 @@ for k_value in range(1, 6):
     precision = precision_score(true_labels, predicted_labels) * 100
     recall = recall_score(true_labels, predicted_labels) * 100
 
-    # 打印結果
-    print(f"Accuracy: {accuracy:.3f}%")
-    print(f"Precision: {precision:.3f}%")
-    print(f"Recall: {recall:.3f}%")
-
-    # 繪製混淆矩陣
-    print("繪製混淆矩陣...")
-    cm = confusion_matrix(true_labels, predicted_labels, labels=[0, 1])
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["legal", "illegal"])
-    disp.plot(cmap=plt.cm.Blues, colorbar=True, values_format='.0f')
-
-    # 設置標題與標籤
-    plt.title(f"Confusion Matrix_{model_file_name}")
-    plt.xlabel("Predicted Label")
-    plt.ylabel("True Label")
-
-    # 保存混淆矩陣圖像
-    plt.savefig(confusion_matrix_file)
-    plt.show()
-
-    print(f"混淆矩陣已保存為：{confusion_matrix_file}")
-
     # Append the results to the all_results list
     all_results.append({
         "k": k_value,
@@ -214,6 +193,29 @@ for k_value in range(1, 6):
         "total_time": total_time,
         "average_time": average_time
     })
+
+    # 打印結果
+    print(f"Accuracy: {accuracy:.3f}%")
+    print(f"Precision: {precision:.3f}%")
+    print(f"Recall: {recall:.3f}%")
+    print(f"Total Time: {int(total_time // 60)}min {int(total_time % 60)}sec")
+    print(f"Average Time: {average_time:.2f}ms")
+
+    # 繪製混淆矩陣
+    print("繪製混淆矩陣...")
+    cm = confusion_matrix(true_labels, predicted_labels, labels=[0, 1])
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["legal", "illegal"])
+    disp.plot(cmap=plt.cm.Blues, colorbar=False, values_format='.0f')
+
+    # 設置標題與標籤
+    plt.title(f"retrieval system: {model_name} - k = {k_value}")
+    plt.xlabel("Predicted Label")
+    plt.ylabel("True Label")
+
+    # 保存混淆矩陣圖像
+    plt.savefig(confusion_matrix_file)
+
+    print(f"混淆矩陣已保存為：{confusion_matrix_file}")
 
 # Save all results to a single file
 summary_file = os.path.join(base_output_dir, model_file_name, "summary_results.txt")
