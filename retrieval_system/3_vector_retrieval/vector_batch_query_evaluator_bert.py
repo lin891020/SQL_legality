@@ -13,9 +13,10 @@ import time
 warnings.filterwarnings("ignore")
 
 
-# 配置模型名稱
-# model_name = 'microsoft/codebert-base'  # 使用 Hugging Face 的 CodeBERT 模型
-model_name = "cssupport/mobilebert-sql-injection-detect"
+# 嵌入模型名稱
+# model_name = "microsoft/codebert-base"
+# model_name = "cssupport/mobilebert-sql-injection-detect"
+model_name = "jackaduma/SecBERT"
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
