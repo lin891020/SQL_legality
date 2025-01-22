@@ -7,6 +7,7 @@ model_names = [
     'paraphrase-mpnet-base-v2', 
     'microsoft/codebert-base', 
     'cssupport/mobilebert-sql-injection-detect'
+    'jackaduma/SecBERT'
 ]
 
 # 定義檢查函數
