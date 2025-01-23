@@ -8,12 +8,14 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 # 配置模型名稱
-# model_name = "microsoft/codebert-base"
-# model_name = "cssupport/mobilebert-sql-injection-detect"
-model_name = "jackaduma/SecBERT" # 使用 Hugging Face 的 SecBERT 模型
+model_name = "microsoft/codebert-base"
+# model_name = "cssupport/mobilebert-sql-injection-detect" 
+# model_name = "jackaduma/SecBERT" # 使用 Hugging Face 的 SecBERT 模型
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
+
+
 
 print(f"正在使用 {model_name} 模型進行 SQL Injection 檢測...")
 
@@ -31,7 +33,7 @@ def classify_sql_legality(user_query):
     with torch.no_grad():
         outputs = model(**inputs)
     
-    # 獲取 logits，計算分類概率
+    # 獲取 logits，計算分類概率 
     logits = outputs.logits
     probabilities = torch.nn.functional.softmax(logits, dim=-1).squeeze().tolist()
     
@@ -132,7 +134,7 @@ print(f"Recall: {recall:.3f}%")
 print("繪製混淆矩陣...")
 cm = confusion_matrix(true_labels, predicted_labels, labels=[0, 1])
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["legal", "illegal"])
-disp.plot(cmap=plt.cm.Blues, colorbar=True, values_format='.0f')
+disp.plot(cmap=plt.cm.Blues, colorbar=False, values_format='.0f')
 
 # 設置標題與標籤
 plt.title(f"Confusion Matrix_{model_name.replace('-', '_').replace('/', '_')}")

@@ -6,7 +6,7 @@ model_names = [
     'paraphrase-MiniLM-L6-v2', 
     'paraphrase-mpnet-base-v2', 
     'microsoft/codebert-base', 
-    'cssupport/mobilebert-sql-injection-detect'
+    'cssupport/mobilebert-sql-injection-detect',
     'jackaduma/SecBERT'
 ]
 
