@@ -76,8 +76,8 @@ def classify_sql_legality(user_query, k, epsilon=1e-6):
 
 
 # 測試 SQL 判斷功能
-user_query = "SELECT * FROM users WHERE id = 1;" # 合法語句    
-# user_query = "select * from users where id = 1 %!<1 or 1 = 1 -- 1" # 非法語句
+# user_query = "SELECT * FROM users WHERE id = 1;" # 合法語句    
+user_query = "select * from users where id = 1 %!<1 or 1 = 1 -- 1" # 非法語句
 # user_query = "SELECT AVG ( Price ) FROM sail;" # 合法語句
 # user_query = "SELECT hall, origin, becomingFROM wear WHERE hat IS NOT NULL;" # 非法語句
 
